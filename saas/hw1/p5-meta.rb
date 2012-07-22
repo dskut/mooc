@@ -48,6 +48,7 @@ end
 
 module Enumerable
     def palindrome?
-        return self == self.reverse
+        arr = self.to_a
+        return arr == arr.reverse 
     end
 end
