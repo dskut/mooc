@@ -2,7 +2,7 @@
 
 class WrongNumberOfPlayersError < StandardError ; end
 
-class NoSuchStrategy < StandardError ; end
+class NoSuchStrategyError < StandardError ; end
 
 def rps_game_winner(game)
     raise WrongNumberOfPlayersError unless game.length == 2
@@ -10,7 +10,7 @@ def rps_game_winner(game)
     second = game[1]
     first_str = first[1].downcase
     second_str = second[1].downcase
-    raise NoSuchStrategy unless "rps".include? first_str and "rps".include? second_str
+    raise NoSuchStrategyError unless "rps".include? first_str and "rps".include? second_str
     return first if first_str == second_str
     if first_str == "r" then
         return second_str == "s" ? first : second
