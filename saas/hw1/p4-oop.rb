@@ -26,6 +26,6 @@ class JellyBean < Dessert
     end
 
     def delicious?
-        return @flavor != :black_licorice
+        return @flavor != 'black licorice'
     end
 end
