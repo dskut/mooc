@@ -16,13 +16,16 @@ abstract class TweetSet {
   /** This method takes a predicate and returns a subset of all the elements
    *  in the original set for which the predicate is true.
    */
-  def filter(p: Tweet => Boolean): TweetSet = ???
+  def filter(p: Tweet => Boolean): TweetSet = 
+    filter0(p, new Empty)
   def filter0(p: Tweet => Boolean, accu: TweetSet): TweetSet
 
-  def union(that: TweetSet): TweetSet = ???
+  def union(that: TweetSet): TweetSet
 
   // Hint: the method "remove" on TweetSet will be very useful.
-  def ascendingByRetweet: Trending = ???
+  def ascendingByRetweet: Trending = 
+  	ascendingByRetweetAcc(new EmptyTrending)
+  def ascendingByRetweetAcc(acc: Trending): Trending
 
   // The following methods are provided for you, and do not have to be changed
   // -------------------------------------------------------------------------
@@ -55,7 +58,7 @@ abstract class TweetSet {
 
 class Empty extends TweetSet {
 
-  def filter0(p: Tweet => Boolean, accu: TweetSet): TweetSet = ???
+  def filter0(p: Tweet => Boolean, accu: TweetSet): TweetSet = accu
 
   // The following methods are provided for you, and do not have to be changed
   // -------------------------------------------------------------------------
@@ -66,11 +69,17 @@ class Empty extends TweetSet {
   def tail = throw new Exception("Empty.tail")
   def remove(tw: Tweet): TweetSet = this
   // -------------------------------------------------------------------------
+
+  override def union(that: TweetSet) = that
+  override def ascendingByRetweetAcc(acc: Trending): Trending = acc
 }
 
 class NonEmpty(elem: Tweet, left: TweetSet, right: TweetSet) extends TweetSet {
 
-  def filter0(p: Tweet => Boolean, accu: TweetSet): TweetSet = ???
+  def filter0(p: Tweet => Boolean, accu: TweetSet): TweetSet = {
+    if (p(elem)) right.filter0(p, left.filter0(p, accu.incl(elem)))
+    else right.filter0(p, left.filter0(p, accu))
+  }
 
   // The following methods are provided for you, and do not have to be changed
   // -------------------------------------------------------------------------
@@ -94,6 +103,16 @@ class NonEmpty(elem: Tweet, left: TweetSet, right: TweetSet) extends TweetSet {
     else if (elem.text < tw.text) new NonEmpty(elem, left, right.remove(tw))
     else left.union(right)
   // -------------------------------------------------------------------------
+
+  override def union(that: TweetSet): TweetSet = {
+    if (that.isEmpty) this
+    else incl(that.head) union that.tail
+  }
+
+  override def ascendingByRetweetAcc(acc: Trending): Trending = {
+    val min = this.findMin
+    this.remove(min).ascendingByRetweetAcc(acc + min)
+  }
 }
 
 
@@ -137,16 +156,29 @@ object GoogleVsApple {
   
   val apple = List("ios", "iOS", "iphone", "iPhone", "ipad", "iPad")
 
-  val googleTweets: TweetSet = ???
+  def isInList(list: List[String]): Tweet => Boolean =
+    tweet => list.exists(x => tweet.text.contains(x))
+  
+  val googleTweets: TweetSet =
+    TweetReader.allTweets.filter(isInList(google))
 
-  val appleTweets: TweetSet = ???
+  val appleTweets: TweetSet = 
+    TweetReader.allTweets.filter(isInList(apple))
 
   // Q: from both sets, what is the tweet with highest #retweets?
-  val trending: Trending = ???
+  val trending: Trending = {
+    (googleTweets union appleTweets).ascendingByRetweet
+  }
 }
 
 object Main extends App {
   // Some help printing the results:
-  // println("RANKED:")
-  // GoogleVsApple.trending foreach println
+//  println("all tweets:")
+//  TweetReader.allTweets foreach println
+//  println("google tweets:")
+//  GoogleVsApple.googleTweets foreach println
+//  println("apple tweets:")
+//  GoogleVsApple.appleTweets foreach println
+  println("RANKED:")
+  GoogleVsApple.trending foreach println
 }
