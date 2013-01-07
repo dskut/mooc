@@ -22,7 +22,7 @@ class TweetSetSuite extends FunSuite {
     if (set.isEmpty) 0
     else 1 + size(set.tail)
   }
-
+  
   test("filter: on empty set") {
     new TestSets {
       assert(size(set1.filter(tw => tw.user == "a")) === 0)

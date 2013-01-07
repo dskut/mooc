@@ -1,5 +1,7 @@
 package objsets
 
+import scala.util.parsing.json.JSON
+
 object TweetReader {
 
   object ParseTweets {
