@@ -1,0 +1,16 @@
+grading/
+cgen
+parser
+lexer
+semant
+mycoolc
+coolc
+*.pl
+*.cl
+*.class
+*.txt
+*.out
+*.output
+*.s
+*.classpath
+*.project
