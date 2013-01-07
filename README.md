@@ -1,5 +1,5 @@
-online-study
+mooc
 ============
 
-Labs and homeworks  for online educational courses (coursera, udacity, stanford etc)
+Labs and homeworks  for massive open online courses (coursera, udacity, stanford etc)
 
