@@ -1,6 +1,6 @@
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.Map.Entry;
 
 class Movie {
 	public int id;
@@ -44,6 +44,64 @@ class MovieRecommendations {
 	}
 }
 
+class RatingsMatrix {
+	private Map<Integer, Map<Integer, Double>> userRatings;
+	private Map<Integer, Map<Integer, Double>> movieRatings;
+	
+	public RatingsMatrix() {
+		userRatings = new HashMap<Integer, Map<Integer, Double> >();
+		movieRatings = new HashMap<Integer, Map<Integer, Double> >();
+	}
+	
+	public void add(UserMovieRating rating) {
+		if (userRatings.containsKey(rating.userId)) {
+			userRatings.get(rating.userId).put(rating.movieId, rating.rating);
+		} else {
+			Map<Integer, Double> newMap = new HashMap<Integer, Double>();
+			newMap.put(rating.movieId, rating.rating);
+			userRatings.put(rating.userId, newMap);
+		}
+		
+		if (movieRatings.containsKey(rating.movieId)) {
+			movieRatings.get(rating.movieId).put(rating.userId, rating.rating);
+		} else {
+			Map<Integer, Double> newMap = new HashMap<Integer, Double>();
+			newMap.put(rating.userId, rating.rating);
+			movieRatings.put(rating.movieId, newMap);
+		}
+	}
+
+	public int getCountByMovie(int inputMovie) {
+		return movieRatings.get(inputMovie).size();
+	}
+
+	public Set<Integer> getMovies() {
+		return movieRatings.keySet();
+	}
+
+	public int intersectionByMovie(int first, int second) {
+		Set<Integer> firstUsers = movieRatings.get(first).keySet();
+		Set<Integer> secondUsers = movieRatings.get(second).keySet();
+		Set<Integer> inter = new HashSet<Integer>(firstUsers);
+		inter.retainAll(secondUsers);
+		return inter.size();
+	}
+
+	public int getIgnoreCountByMovie(int movieId) {
+		return userRatings.size() - getCountByMovie(movieId);
+	}
+
+	public int intersectionByMovieIgnore(int ignoredMovieId, int movieId) {
+		Set<Integer> allUsers = userRatings.keySet();
+		Set<Integer> firstUsers = movieRatings.get(ignoredMovieId).keySet();
+		Set<Integer> secondUsers = movieRatings.get(movieId).keySet();
+		Set<Integer> res = new HashSet<Integer>(allUsers);
+		res.removeAll(firstUsers);
+		res.retainAll(secondUsers);
+		return res.size();
+	}
+}
+
 class NonPersRecommender {
 	private static final int predictionsCount = 5;
 	
@@ -53,12 +111,14 @@ class NonPersRecommender {
     	final String outSimplePath = "simple.txt";
     	final String outAdvancedPath = "advanced.txt";
     	final int inputMovies[] = new int[] {278, 272, 603};
+    	//final int inputMovies[] = new int[] {11, 121, 8587};
         try {
         	List<Movie> movies = readMovies(moviesPath);
         	List<UserMovieRating> ratings = readRatings(ratingsPath);
-        	List<MovieRecommendations> simplePredictions = simplePredict(movies, ratings, inputMovies);
+        	RatingsMatrix ratingsMatrix = createRatingsMatrix(ratings);
+        	List<MovieRecommendations> simplePredictions = simplePredict(ratingsMatrix, inputMovies);
         	printPredictions(simplePredictions, outSimplePath);
-        	List<MovieRecommendations> advancedPredictions = advancedPredict(movies, ratings, inputMovies);
+        	List<MovieRecommendations> advancedPredictions = advancedPredict(ratingsMatrix, inputMovies);
         	printPredictions(advancedPredictions, outAdvancedPath);
 
         } catch (Exception e) {
@@ -66,44 +126,75 @@ class NonPersRecommender {
         }
     }
 
-	private static MovieScore[] simpleRecommend(List<Movie> movies,
-		List<UserMovieRating> ratings, int inputMovie) 
-	{
-		MovieScore res[] = new MovieScore[predictionsCount];
-		for (int i = 0; i < predictionsCount; ++i) {
-			res[i] = new MovieScore(inputMovie, (i+1)*0.5);
+	private static RatingsMatrix createRatingsMatrix(List<UserMovieRating> ratings) {
+		RatingsMatrix res = new RatingsMatrix();
+		for (UserMovieRating rating: ratings) {
+			res.add(rating);
 		}
 		return res;
 	}
-	
-	private static MovieScore[] advancedRecommend(List<Movie> movies,
-		List<UserMovieRating> ratings, int inputMovie) 
-	{
-		MovieScore res[] = new MovieScore[predictionsCount];
-		for (int i = 0; i < predictionsCount; ++i) {
-			res[i] = new MovieScore(inputMovie, (i+1)*0.5);
+
+	private static MovieScore[] simpleRecommend(RatingsMatrix ratings, int inputMovie) {
+		int inputMovieRatingsCount = ratings.getCountByMovie(inputMovie);
+		List<MovieScore> scores = new ArrayList<MovieScore>();
+		
+		for (int movieId: ratings.getMovies()) {
+			if (movieId == inputMovie) {
+				continue;
+			}			
+			int intersection = ratings.intersectionByMovie(movieId, inputMovie);
+			double score = new Double(intersection) / inputMovieRatingsCount;
+			MovieScore movieScore = new MovieScore(movieId, score);
+			scores.add(movieScore);
 		}
-		return res;
+		
+		return selectTop(scores, predictionsCount);
+	}
+
+	private static MovieScore[] advancedRecommend(RatingsMatrix ratings, int inputMovie) {
+		int inputMovieRatingsCount = ratings.getCountByMovie(inputMovie);
+		int inputMovieIgnoreCount = ratings.getIgnoreCountByMovie(inputMovie);
+		List<MovieScore> scores = new ArrayList<MovieScore>();
+		
+		for (int movieId: ratings.getMovies()) {
+			if (movieId == inputMovie) {
+				continue;
+			}			
+			int intersection = ratings.intersectionByMovie(movieId, inputMovie);
+			double numerator = new Double(intersection) / inputMovieRatingsCount;
+			double notIntersection = ratings.intersectionByMovieIgnore(inputMovie, movieId);
+			double denominator = new Double(notIntersection) / inputMovieIgnoreCount;
+			double score = numerator / denominator;
+			MovieScore movieScore = new MovieScore(movieId, score);
+			scores.add(movieScore);
+		}
+		
+		return selectTop(scores, predictionsCount);
 	}
 	
-	private static List<MovieRecommendations> simplePredict(List<Movie> movies, 
-			List<UserMovieRating> ratings, int[] inputMovies) 
-	{
+	private static MovieScore[] selectTop(List<MovieScore> scores, int count) {
+		Collections.sort(scores, new Comparator<MovieScore>() {
+			public int compare(MovieScore first, MovieScore second) {
+				return new Double(second.rating).compareTo(new Double(first.rating));
+			}
+		});
+		return scores.subList(0, count).toArray(new MovieScore[count]);
+	}
+	
+	private static List<MovieRecommendations> simplePredict(RatingsMatrix ratings, int[] inputMovies) {
 		List<MovieRecommendations> res = new ArrayList<MovieRecommendations>();
 		for (int inputMovie: inputMovies) {
-			MovieScore recommendations[] = simpleRecommend(movies, ratings, inputMovie);
+			MovieScore recommendations[] = simpleRecommend(ratings, inputMovie);
 			MovieRecommendations rec = new MovieRecommendations(inputMovie, recommendations);
 			res.add(rec);
 		}
 		return res;
 	}
 
-	private static List<MovieRecommendations> advancedPredict(List<Movie> movies,	
-		List<UserMovieRating> ratings, int[] inputMovies) 
-	{
+	private static List<MovieRecommendations> advancedPredict(RatingsMatrix ratings, int[] inputMovies) {
 		List<MovieRecommendations> res = new ArrayList<MovieRecommendations>();
 		for (int inputMovie: inputMovies) {
-			MovieScore recommendations[] = advancedRecommend(movies, ratings, inputMovie);
+			MovieScore recommendations[] = advancedRecommend(ratings, inputMovie);
 			MovieRecommendations rec = new MovieRecommendations(inputMovie, recommendations);
 			res.add(rec);
 		}
@@ -149,7 +240,7 @@ class NonPersRecommender {
 	            sb.append(',');
 	            sb.append(movieScore.movieId);
 	            sb.append(',');
-	            sb.append(movieScore.rating);
+	            sb.append(Math.round(movieScore.rating*100)/100.0);
 	        }
 	        writer.println(sb.toString());
         }
