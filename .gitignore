@@ -1,2 +1,7 @@
 *~
 *.jar
+*.class
+*.csv
+*.pdf
+*.project
+*.classpath
