@@ -38,22 +38,25 @@ def read_orders(orders_path):
         order['shares'] = int(data[5])
         res.append(order)
     res.sort(cmp = order_comparer)
+    orders_file.close()
     return res
 
 def get_symbols(orders):
     return list(set([order['symbol'] for order in orders]))
 
-def read_prices(dt_start, dt_end, symbols):
-    ldt_timestamps = du.getNYSEdays(dt_start, dt_end, dt.timedelta(hours=16))
+def get_timestamps(start, end):
+    return du.getNYSEdays(start, end, dt.timedelta(hours=16))
+
+def read_prices(timestamps, symbols):
     dataobj = da.DataAccess('Yahoo')
     ls_keys = ['open', 'high', 'low', 'close', 'volume', 'actual_close']
-    ldf_data = dataobj.get_data(ldt_timestamps, symbols, ls_keys)
+    ldf_data = dataobj.get_data(timestamps, symbols, ls_keys)
     d_data = dict(zip(ls_keys, ldf_data))
     prices = d_data['close'].values
     sym2prices = []
     for price in prices:
         sym2prices.append(dict(zip(symbols, price)))
-    res = dict(zip(ldt_timestamps, sym2prices))
+    res = dict(zip(timestamps, sym2prices))
     return res
 
 def group_by_day(orders):
@@ -65,35 +68,36 @@ def group_by_day(orders):
         date2orders[dt].append(order)
     return date2orders
 
-class DailyOrders:
-    def __init__(self, date, orders):
-        self.date = date
-        self.orders = orders
-
-    def __repr__(self):
-        return str(self.date) + " => " + str(self.orders) + "\n"
-
-def flatten(date2orders):
-    res = []
-    for date, orders in date2orders.iteritems():
-        dailyOrders = DailyOrders(date, orders)
-        res.append(dailyOrders)
-    res.sort(key = operator.attrgetter("date"))
-    return res
-
-def execute_order(order, prices):
+def make_order(order, portfolio, prices):
     dt = order["datetime"]
-    price = float(prices[dt][order['symbol']])
-    val = price * order['shares']
+    symbol = order['symbol']
+    shares = order['shares']
+    if symbol not in portfolio:
+        portfolio[symbol] = 0
+    price = float(prices[dt][symbol])
+    val = price * shares
     if order['action'] == 'buy':
+        portfolio[symbol] += shares
         return -val
     else:
+        portfolio[symbol] -= shares
         return val
 
-def execute(daily_orders, prices):
+def make_orders(dt, orders_grouped, portfolio, prices):
+    if dt not in orders_grouped:
+        return 0
     res = 0
-    for order in daily_orders.orders:
-        res += execute_order(order, prices)
+    orders = orders_grouped[dt]
+    for order in orders:
+        res += make_order(order, portfolio, prices)
+    return res
+
+def eval_portfolio(portfolio, dt, prices):
+    res = 0
+    sym2prices = prices[dt]
+    for symbol, shares in portfolio.iteritems():
+        price = float(sym2prices[symbol])
+        res += price * shares
     return res
 
 def main():
@@ -106,15 +110,19 @@ def main():
     values_path = sys.argv[3]
 
     orders = read_orders(orders_path)
-    prices = read_prices(get_order_datetime(orders[0]), get_order_datetime(orders[-1]), get_symbols(orders))
+    timestamps = get_timestamps(get_order_datetime(orders[0]), get_order_datetime(orders[-1]))
+    prices = read_prices(timestamps, get_symbols(orders))
     orders_grouped = group_by_day(orders)
-    orders_by_date_list = flatten(orders_grouped)
     
     out_file = open(values_path, 'w')
-    for daily_orders in orders_by_date_list:
-        cash += execute(daily_orders, prices)
-        dt = daily_orders.date
-        s = "{0}, {1}, {2}, {3}".format(dt.year, dt.month, dt.day, cash)
+    portfolio = {}
+    for dt in timestamps:
+        cash += make_orders(dt, orders_grouped, portfolio, prices)
+        value = eval_portfolio(portfolio, dt, prices)
+        total = cash + value
+        s = "{0}, {1}, {2}, {3}".format(dt.year, dt.month, dt.day, total)
+        print s
         out_file.write(s + os.linesep)
+    out_file.close()
 
 main()
