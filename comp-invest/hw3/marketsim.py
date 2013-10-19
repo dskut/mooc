@@ -33,8 +33,8 @@ def read_orders(orders_path):
         order['month'] = int(data[1])
         order['day'] = int(data[2])
         order['datetime'] = get_order_datetime(order)
-        order['symbol'] = data[3]
-        order['action'] = data[4].lower()
+        order['symbol'] = data[3].strip()
+        order['action'] = data[4].strip().lower()
         order['shares'] = int(data[5])
         res.append(order)
     res.sort(cmp = order_comparer)

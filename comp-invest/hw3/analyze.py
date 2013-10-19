@@ -13,6 +13,8 @@ import QSTK.qstkutil.DataAccess as da
 import QSTK.qstkutil.tsutil as tsu
 import QSTK.qstkstudy.EventProfiler as ep
 
+DAYS_IN_YEAR = 252
+
 def get_order_datetime(value, hour=16):
     return dt.datetime(value['year'], value['month'], value['day'], hour)
 
@@ -83,6 +85,12 @@ def get_bench_stdev(bench_values):
     daily_returns = get_daily_returns(bench_values)
     return np.std(daily_returns)
 
+def get_sharpe(values):
+    return get_avg(values) / get_stdev(values) * math.sqrt(DAYS_IN_YEAR)
+
+def get_bench_sharpe(values):
+    return get_bench_avg(values) / get_bench_stdev(values) * math.sqrt(DAYS_IN_YEAR)
+
 def analyze(values, benchmark_values, symbol):
     print "last value =", values[-1]
 
@@ -97,6 +105,9 @@ def analyze(values, benchmark_values, symbol):
 
     print "fund avg daily =", get_avg(values)
     print "%s avg daily return = %s" % (symbol, get_bench_avg(benchmark_values))
+
+    print "fund sharpe ratio =", get_sharpe(values)
+    print "%s sharpe ratio = %s" % (symbol, get_bench_sharpe(benchmark_values))
 
 
 def main():
