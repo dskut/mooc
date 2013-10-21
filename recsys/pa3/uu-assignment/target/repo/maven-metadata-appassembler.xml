@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+  <groupId>cs.umn.edu.recsys</groupId>
+  <artifactId>uu-assignment</artifactId>
+  <versioning>
+    <versions>
+      <version>1.0-SNAPSHOT</version>
+    </versions>
+    <lastUpdated>20131021081840</lastUpdated>
+  </versioning>
+</metadata>
