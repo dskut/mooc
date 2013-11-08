@@ -1,0 +1,16 @@
+/home/dskut/projects/mooc/recsys/pa4/eval-assignment/src/main/java/edu/umn/cs/recsys/dao/CSVItemTagDAO.java
+/home/dskut/projects/mooc/recsys/pa4/eval-assignment/src/main/java/edu/umn/cs/recsys/dao/ItemTagDAO.java
+/home/dskut/projects/mooc/recsys/pa4/eval-assignment/src/main/java/edu/umn/cs/recsys/dao/UserFile.java
+/home/dskut/projects/mooc/recsys/pa4/eval-assignment/src/main/java/edu/umn/cs/recsys/dao/MOOCItemDAO.java
+/home/dskut/projects/mooc/recsys/pa4/eval-assignment/src/main/java/edu/umn/cs/recsys/dao/MOOCRatingDAO.java
+/home/dskut/projects/mooc/recsys/pa4/eval-assignment/src/main/java/edu/umn/cs/recsys/dao/TagFile.java
+/home/dskut/projects/mooc/recsys/pa4/eval-assignment/src/main/java/edu/umn/cs/recsys/dao/UserNameDAO.java
+/home/dskut/projects/mooc/recsys/pa4/eval-assignment/src/main/java/edu/umn/cs/recsys/dao/MOOCUserDAO.java
+/home/dskut/projects/mooc/recsys/pa4/eval-assignment/src/main/java/edu/umn/cs/recsys/cbf/LuceneModelBuilder.java
+/home/dskut/projects/mooc/recsys/pa4/eval-assignment/src/main/java/edu/umn/cs/recsys/dao/RatingFile.java
+/home/dskut/projects/mooc/recsys/pa4/eval-assignment/src/main/java/edu/umn/cs/recsys/TagVocabulary.java
+/home/dskut/projects/mooc/recsys/pa4/eval-assignment/src/main/java/edu/umn/cs/recsys/dao/TitleFile.java
+/home/dskut/projects/mooc/recsys/pa4/eval-assignment/src/main/java/edu/umn/cs/recsys/PopularityItemScorer.java
+/home/dskut/projects/mooc/recsys/pa4/eval-assignment/src/main/java/edu/umn/cs/recsys/cbf/LuceneItemItemModel.java
+/home/dskut/projects/mooc/recsys/pa4/eval-assignment/src/main/java/edu/umn/cs/recsys/TagEntropyMetric.java
+/home/dskut/projects/mooc/recsys/pa4/eval-assignment/src/main/java/edu/umn/cs/recsys/dao/ItemTitleDAO.java
