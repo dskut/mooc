@@ -1,0 +1,5 @@
+238,0.4192,The Godfather (1972)
+13,0.4177,Forrest Gump (1994)
+414,0.4121,Batman Forever (1995)
+424,0.3851,Schindler's List (1993)
+603,0.3731,The Matrix (1999)
