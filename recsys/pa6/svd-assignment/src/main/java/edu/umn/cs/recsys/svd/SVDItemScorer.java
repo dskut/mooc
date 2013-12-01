@@ -57,6 +57,10 @@ public class SVDItemScorer extends AbstractItemScorer {
         // TODONE Score the items in the key domain of scores
     	RealMatrix userVector = model.getUserVector(user);
     	RealMatrix weights = model.getFeatureWeights();
+    	
+    	if (userVector == null) {
+    		return;
+    	}
 
         for (VectorEntry e: scores.fast(VectorEntry.State.EITHER)) {
             long item = e.getKey();
